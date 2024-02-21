@@ -120,6 +120,8 @@ void runCommand(string command)
                     dup2(piped[i][1], STDOUT_FILENO);
                     dup2(piped[i][1], STDERR_FILENO);
                 }
+
+                // Closing all the pipes in the child process.
                 for(j = 0; j < piped.size(); j++) {
                     close(piped[j][0]);
                     close(piped[j][1]);
@@ -131,6 +133,8 @@ void runCommand(string command)
             else if(pid > 0) {
             }
         }
+
+        // Closing all the pipes in the parent.
         for(i = 0; i < piped.size(); i++) {
             close(piped[i][0]);
             close(piped[i][1]);
@@ -173,11 +177,14 @@ void runCommand(string command)
     execvp(modifiers[0], modifiers);
 }
 
+// Executing the build-in (built into the shell) commands, and outputting true if the command was a built-in.
+// Outputting false if the command wasn't a built-in command.
 bool executeBuiltIns(string command) {
     stringstream sstream(command);
     vector<string> mods;
     string word;
 
+    // Clearing out the white space in the string and pushing it onto the instruction vector.
     while(sstream >> word) {
         mods.push_back(word);
     }
@@ -209,9 +216,9 @@ bool checkSetting(string str, char findee)
     for(i =0; i < str.size(); i++)
     {
         if(str[i] == findee)
-            return true;
+            return true;  // Returning true if it is found.
     }
-    return false;
+    return false;  // False if it is not.
 }
 
 // Finding if an operator is in the vector of commands, and fixing the vector if it is so it can be used later.
