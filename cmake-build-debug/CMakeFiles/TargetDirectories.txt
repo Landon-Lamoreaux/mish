@@ -1,0 +1,3 @@
+/home/landon/repos/OS/mish/cmake-build-debug/CMakeFiles/mish.dir
+/home/landon/repos/OS/mish/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/landon/repos/OS/mish/cmake-build-debug/CMakeFiles/rebuild_cache.dir
