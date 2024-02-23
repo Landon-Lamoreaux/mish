@@ -6,6 +6,7 @@
 #include <fstream>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <filesystem>
 
 using namespace std;
 
@@ -15,6 +16,7 @@ int main(int argv, char **argc) {
     vector<string> commands;
     fstream fin;
     int pid;
+    std::filesystem::path cwd;
 
     rl_bind_key('\t', rl_complete);
     using_history();
@@ -28,9 +30,10 @@ int main(int argv, char **argc) {
 
     while (input != "exit" && !fin.eof())
     {
+        cwd = std::filesystem::current_path();
 
         if(argv == 1) {
-            input = readline("mish>");
+            input = readline(("mish:~" + cwd.string() + ">").c_str());
         }
         else
             getline(fin, input);
