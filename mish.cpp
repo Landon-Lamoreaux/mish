@@ -94,6 +94,12 @@ void runCommand(string command)
         mods.push_back(word);
     }
 
+    // Error out if there is a trailing pipe character in the command.
+    if(mods[mods.size() - 1] == "|") {
+        cout << "Error: Command cannot have a trailing pipe." << endl;
+        exit(0);
+    }
+
     // Doing piping things.
     if (getOperator(mods, '|') != -1) {
         vector<string> pipedCommands = splitString(command, "|");
