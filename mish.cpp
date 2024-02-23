@@ -1,6 +1,5 @@
 #include <iostream>
 #include "cmake-build-debug/mish.h"
-#include <regex>
 #include <boost/algorithm/string.hpp>
 #include <sys/wait.h>
 #include <fstream>
@@ -33,7 +32,7 @@ int main(int argv, char **argc) {
         cwd = std::filesystem::current_path();
 
         if(argv == 1) {
-            input = readline(("mish:~" + cwd.string() + ">").c_str());
+            input = readline(("mish:~" + cwd.string() + "> ").c_str());
         }
         else
             getline(fin, input);
