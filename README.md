@@ -5,4 +5,4 @@ This program was built in C++ 23 using CMake as an Operating Systems class proje
 This program also uses the external library: GNU Readline.
 
 This shell supports piping, parallel commands, and input/output redirection.
-There is a command history and tab auto-completion.
+There is a command history and tab auto-completion as well as it tells the user the current working directory.
