@@ -17,9 +17,11 @@ int main(int argv, char **argc) {
     int pid;
     std::filesystem::path cwd;
 
+    // Adding tab completion and history to the shell.
     rl_bind_key('\t', rl_complete);
     using_history();
 
+    // Opening a file for input if there was a file specified at start up.
     if(argv == 2) {
         fin.open(argc[1]);
     }
@@ -29,14 +31,17 @@ int main(int argv, char **argc) {
 
     while (input != "exit" && !fin.eof())
     {
+        // Getting the current working directory to be displayed to the user.
         cwd = std::filesystem::current_path();
 
+        // Reading in commands from the user or a file.
         if(argv == 1) {
             input = readline(("mish:~" + cwd.string() + "> ").c_str());
         }
         else
             getline(fin, input);
 
+        // Adding the last command to the history list so users can have a command history.
         add_history(input.c_str());
 
         // Killing the program when an exit is requested by the user.
@@ -49,8 +54,8 @@ int main(int argv, char **argc) {
         // Running all the commands in parallel.
         for(i = 0; i < commands.size(); i++)
         {
-            boost::trim(commands[i]);
-            if (commands[i].empty())
+            boost::trim(commands[i]);  // Trimming white space out of the commands.
+            if (commands[i].empty())  // Skipping execution if the command is empty.
                 continue;
             if(!executeBuiltIns(commands[i])) {
                 pid = fork();
@@ -80,6 +85,7 @@ vector<string> splitString(string str, string delimiter)
     return commands;
 }
 
+// Running the command that was sent into the program.
 void runCommand(string command)
 {
     stringstream sstream(command);
@@ -89,7 +95,9 @@ void runCommand(string command)
     int i, j;
     int inputNum;
     vector<int*> piped;
+    char ** modifiers;
 
+    // Clearing white space off of the arguments of the command.
     while(sstream >> word) {
         mods.push_back(word);
     }
@@ -134,10 +142,13 @@ void runCommand(string command)
                     close(piped[j][0]);
                     close(piped[j][1]);
                 }
+
+                // Running the command and outputting an error if there was a problem.
                 runCommand(pipedCommands[i]);
                 perror("Pipe Error");
                 exit(0);
             }
+            // Do nothing in the parent.
             else if(pid > 0) {
             }
         }
@@ -154,10 +165,11 @@ void runCommand(string command)
 
     // Output redirection.
     if(getOperator(mods, '>') != -1) {
+        // Opening the file for output with all the proper flags.
         int file = open(mods[mods.size() - 1].c_str(), O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-        dup2(file, STDOUT_FILENO);
-        dup2(file, STDERR_FILENO);
-        mods.pop_back();
+        dup2(file, STDOUT_FILENO);  // Redirecting standard out.
+        dup2(file, STDERR_FILENO);  // Redirecting standard error.
+        mods.pop_back();  // Taking the file name off the argument list.
     }
 
     // Input redirection.
@@ -168,20 +180,24 @@ void runCommand(string command)
             fstream fin;
             fin.open(mods[mods.size() - 1], fstream::in);
             mods.pop_back();
+
+            // Reading from the file into the arguments list.
             while(fin >> word) {
                 mods.push_back(word);
             }
         }
     }
 
-    char ** modifiers;
+    // Converting the string vector into a vector of character pointers.
     for(i = 0; i < mods.size(); i++) {
         words.push_back(mods[i].c_str());
     }
 
+    // Converting the vector of character pointers to a double pointer array so execvp can use it.
     words.push_back(nullptr);
     modifiers = const_cast<char **>(&words[0]);
 
+    // Running the command.
     execvp(modifiers[0], modifiers);
 }
 
@@ -203,7 +219,7 @@ bool executeBuiltIns(string command) {
             perror("Incorrect number of arguments");
             return true;
         }
-        chdir(mods[1].c_str());
+        chdir(mods[1].c_str());  // Changing the directory.
         return true;
     }
 
@@ -243,8 +259,10 @@ int getOperator(vector<string> &commands, char op)
                 commands.erase(commands.begin() + i);
                 for(k = 0; k < mods.size(); k++) {
                     if(!mods[k].empty())
+                        // Inserting the newly split string into the correct spot in the commands vector.
                         commands.insert(commands.begin() + i + k, mods[k]);
                     else {
+                        // Removing the empty string and decrementing the counter, so we can check the rest of the vector.
                         mods.erase(mods.begin() + k);
                         k--;
                     }
