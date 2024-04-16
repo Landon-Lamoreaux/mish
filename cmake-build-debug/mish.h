@@ -19,4 +19,6 @@ int getOperator(vector<string> &commands, char op);
 
 bool executeBuiltIns(string command);
 
+bool checkCommand(string command);
+
 #endif //MISH_MISH_H

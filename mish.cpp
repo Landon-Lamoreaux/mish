@@ -12,6 +12,7 @@ using namespace std;
 int main(int argv, char **argc) {
     int i;
     string input = " ";
+    char* cinput;
     vector<string> commands;
     fstream fin;
     int pid;
@@ -36,7 +37,12 @@ int main(int argv, char **argc) {
 
         // Reading in commands from the user or a file.
         if(argv == 1) {
-            input = readline(("mish:~" + cwd.string() + "> ").c_str());
+            cinput = readline(("mish:~" + cwd.string() + "> ").c_str());
+
+            // Exiting if an EOF was entered.
+            if(!cinput)
+                exit(0);
+            input = cinput;
         }
         else
             getline(fin, input);
@@ -96,6 +102,10 @@ void runCommand(string command)
     int inputNum;
     vector<int*> piped;
     char ** modifiers;
+
+    if(!checkCommand(command)) {
+        return;
+    }
 
     // Clearing white space off of the arguments of the command.
     while(sstream >> word) {
@@ -175,17 +185,18 @@ void runCommand(string command)
     // Input redirection.
     if(checkSetting(command, '<')) {
 
-        inputNum = getOperator(mods, '<');
-        if(inputNum != -1) {
-            fstream fin;
-            fin.open(mods[mods.size() - 1], fstream::in);
-            mods.pop_back();
-
-            // Reading from the file into the arguments list.
-            while(fin >> word) {
-                mods.push_back(word);
-            }
+        int file = open(mods[mods.size() - 1].c_str(), O_RDONLY);
+        if(file == -1) {
+            perror(("Error Opening File " + mods[mods.size()]).c_str());
+            return;
         }
+        mods.pop_back();
+        mods.pop_back();
+        if(dup2(file, STDIN_FILENO) == -1) {
+            perror("Error redirecting STDIN: ");
+            return;
+        }
+        close(file);
     }
 
     // Converting the string vector into a vector of character pointers.
@@ -220,6 +231,12 @@ bool executeBuiltIns(string command) {
             return true;
         }
         chdir(mods[1].c_str());  // Changing the directory.
+        return true;
+    }
+    // Exiting if the exit command was entered.
+    else if(mods[0] == "exit")
+    {
+        exit(0);
         return true;
     }
 
@@ -272,4 +289,69 @@ int getOperator(vector<string> &commands, char op)
         }
     }
     return -1;
+}
+
+
+bool checkCommand(string command) {
+    int i = 0;
+    int count1 = 0;
+    int count2 = 0;
+
+    for(i = 0; i < command.length(); i++) {
+        if(command[i] == '<') {
+            count1++;
+        }
+        if(command[i] == '>') {
+            count2++;
+        }
+    }
+    if(count1 > 1) {
+        perror("Error: Multiple input redirect");
+        return false;
+    }
+    if(count2 > 1) {
+        perror("Error: Multiple output redirect");
+        return false;
+    }
+
+    stringstream sstream(command);
+    string word;
+    vector<string> mods;
+
+    // Clearing out the white space in the string and pushing it onto the instruction vector.
+    while(sstream >> word) {
+        mods.push_back(word);
+    }
+
+    // Checking for incorrect sequences in the command.
+    for(i = 1; i < mods.size(); i++) {
+        if(mods[i-1] == "|" && mods[i] == "<") {  // Checking for an input redirect after a pipe.
+            perror("Error: Input redirect after pipe.");
+            return false;
+        }
+        if(mods[i-1] == ">" && mods[i] == "|") {  // Checking for an output redirect before a pipe.
+            perror("Error: Output redirect before pipe.");
+            return false;
+        }
+        if(mods[i-1] == "|" && mods[i] == "|") {  // Checking for no commands between 2 pipes.
+            perror("Error: No Command between pipes.");
+            return false;
+        }
+        for(int j = 1; j < mods[i].length(); j++) {
+            if(mods[i][j-1] == '|' && mods[i][j] == '<') {  // Checking for an input redirect after a pipe.
+                perror("Error: Input redirect after pipe.");
+                return false;
+            }
+            if(mods[i][j-1] == '>' && mods[i][j] == '|') {  // Checking for an output redirect before a pipe.
+                perror("Error: Output redirect before pipe.");
+                return false;
+            }
+            if(mods[i][j-1] == '|' && mods[i][j] == '|') {  // Checking for no commands between 2 pipes.
+                perror("Error: No Command between pipes.");
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
